@@ -1,21 +1,20 @@
 import type { EnvConfig, GeminiConfig } from '../utils/validators.js'
-import { dirname } from 'node:path'
 import process from 'node:process'
-import { fileURLToPath } from 'node:url'
 import { config } from 'dotenv'
 import { Validators } from '../utils/validators.js'
 
-// 获取当前文件的目录
-const __filename = fileURLToPath(import.meta.url)
-const __dirname = dirname(__filename)
-
 // 加载环境变量
 config()
+
+export interface ProjectConfig {
+  root: string
+}
 
 export class ConfigManager {
   private static instance: ConfigManager
   private config: GeminiConfig
   private envConfig: EnvConfig
+  private projectConfig: ProjectConfig
 
   private constructor() {
     // 验证环境变量
@@ -30,8 +29,11 @@ export class ConfigManager {
     this.config = {
       apiKey: this.envConfig.GEMINI_API_KEY,
       model: this.envConfig.GEMINI_MODEL,
-      temperature: this.envConfig.GEMINI_TEMPERATURE,
-      maxTokens: this.envConfig.GEMINI_MAX_TOKENS,
+    }
+
+    // 终端运行时，项目配置信息
+    this.projectConfig = {
+      root: process.cwd(),
     }
   }
 
@@ -48,6 +50,10 @@ export class ConfigManager {
 
   public getEnvConfig(): EnvConfig {
     return { ...this.envConfig }
+  }
+
+  public getProjectConfig(): ProjectConfig {
+    return { ...this.projectConfig }
   }
 
   public updateConfig(updates: Partial<GeminiConfig>): void {
@@ -84,4 +90,8 @@ export function getConfig(): GeminiConfig {
 
 export function getEnvConfig(): EnvConfig {
   return ConfigManager.getInstance().getEnvConfig()
+}
+
+export function getProjectConfig(): ProjectConfig {
+  return ConfigManager.getInstance().getProjectConfig()
 }

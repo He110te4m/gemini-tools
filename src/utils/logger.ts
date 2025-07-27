@@ -26,31 +26,31 @@ export class Logger {
     this.logLevel = level
   }
 
-  public debug(message: string, ...args: any[]): void {
+  public debug(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.DEBUG) {
       globalThis.console.log(chalk.gray(`[DEBUG] ${message}`), ...args)
     }
   }
 
-  public info(message: string, ...args: any[]): void {
+  public info(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.INFO) {
       globalThis.console.log(chalk.blue(`[INFO] ${message}`), ...args)
     }
   }
 
-  public warn(message: string, ...args: any[]): void {
+  public warn(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.WARN) {
       globalThis.console.log(chalk.yellow(`[WARN] ${message}`), ...args)
     }
   }
 
-  public error(message: string, ...args: any[]): void {
+  public error(message: string, ...args: unknown[]): void {
     if (this.logLevel <= LogLevel.ERROR) {
       globalThis.console.error(chalk.red(`[ERROR] ${message}`), ...args)
     }
   }
 
-  public success(message: string, ...args: any[]): void {
+  public success(message: string, ...args: unknown[]): void {
     globalThis.console.log(chalk.green(`[SUCCESS] ${message}`), ...args)
   }
 }

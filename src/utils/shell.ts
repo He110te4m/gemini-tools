@@ -1,11 +1,8 @@
+import type { Options } from 'zx'
 import { $ } from 'zx'
 import { logger } from './logger.js'
 
-export interface ShellOptions {
-  cwd?: string
-  silent?: boolean
-  timeout?: number
-}
+export type ShellOptions = Partial<Options>
 
 export interface ShellResult {
   stdout: string
@@ -15,14 +12,24 @@ export interface ShellResult {
 }
 
 export class ShellExecutor {
+  static defaultOptions: ShellOptions = {
+    timeout: 10000,
+  }
+
+  static setDefaultOptions(options: ShellOptions) {
+    this.defaultOptions = { ...this.defaultOptions, ...options }
+  }
+
   /**
    * 执行 shell 命令
    */
-  static async execute(command: string, _options: ShellOptions = {}): Promise<ShellResult> {
+  static async execute(command: string, options: ShellOptions = {}): Promise<ShellResult> {
     try {
       logger.info(`执行命令: ${command}`)
 
-      const result = await $`${command}`
+      const $$ = $(options)
+
+      const result = await $$`${command}`
 
       return {
         stdout: result.stdout,
@@ -92,45 +99,4 @@ export class ShellExecutor {
   static async executeInDir(command: string, dir: string, options: ShellOptions = {}): Promise<ShellResult> {
     return this.execute(command, { ...options, cwd: dir })
   }
-
-  /**
-   * 执行 git 命令
-   */
-  static async git(command: string, options: ShellOptions = {}): Promise<ShellResult> {
-    return this.execute(`git ${command}`, options)
-  }
-
-  /**
-   * 执行 npm 命令
-   */
-  static async npm(command: string, options: ShellOptions = {}): Promise<ShellResult> {
-    return this.execute(`npm ${command}`, options)
-  }
-
-  /**
-   * 执行 yarn 命令
-   */
-  static async yarn(command: string, options: ShellOptions = {}): Promise<ShellResult> {
-    return this.execute(`yarn ${command}`, options)
-  }
-
-  /**
-   * 执行 pnpm 命令
-   */
-  static async pnpm(command: string, options: ShellOptions = {}): Promise<ShellResult> {
-    return this.execute(`pnpm ${command}`, options)
-  }
-}
-
-// 导出便捷函数
-export const shell = {
-  execute: ShellExecutor.execute,
-  getOutput: ShellExecutor.getOutput,
-  commandExists: ShellExecutor.commandExists,
-  executeMultiple: ShellExecutor.executeMultiple,
-  executeInDir: ShellExecutor.executeInDir,
-  git: ShellExecutor.git,
-  npm: ShellExecutor.npm,
-  yarn: ShellExecutor.yarn,
-  pnpm: ShellExecutor.pnpm,
 }

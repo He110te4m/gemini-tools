@@ -3,16 +3,16 @@
   "type": "module",
   "version": "1.0.0",
   "packageManager": "pnpm@10.13.1",
-  "description": "Gemini AI 相关命令行工具集合",
-  "author": "Your Name",
+  "description": "Gemini AI 工具集合 - Review 、 单测生成 、 E2E 测试生成 、 项目文档生成 、 代码重构",
+  "author": "He110",
   "license": "MIT",
-  "homepage": "https://github.com/yourusername/gemini-tools#readme",
+  "homepage": "https://github.com/He110/gemini-tools#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/gemini-tools.git"
+    "url": "https://github.com/He110/gemini-tools.git"
   },
   "bugs": {
-    "url": "https://github.com/yourusername/gemini-tools/issues"
+    "url": "https://github.com/He110/gemini-tools/issues"
   },
   "keywords": [
     "gemini",
@@ -46,7 +46,7 @@
   },
   "scripts": {
     "build": "tsup",
-    "dev": "tsx watch src/bin/index.ts -- -m chat -p 'Hello, how are you?'",
+    "dev": "tsx src/bin/index.ts",
     "clean": "rm -rf dist",
     "prepublishOnly": "pnpm clean && pnpm build",
     "test": "vitest run",
