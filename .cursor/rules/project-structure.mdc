@@ -1,0 +1,57 @@
+---
+alwaysApply: true
+---
+
+# Gemini Tools 项目结构指南
+
+这是一个基于 Google Gemini AI 的现代化命令行工具集，提供代码 Review、测试生成、文档生成和代码重构功能。
+
+## 项目概述
+
+- **项目名称**: gemini-tools
+- **主要功能**: AI 驱动的代码分析和生成工具
+- **技术栈**: TypeScript + Node.js + ESM
+- **包管理器**: pnpm
+- **构建工具**: tsup
+- **测试框架**: vitest
+
+## 核心文件结构
+
+### 入口文件
+- [src/bin/index.ts](mdc:src/bin/index.ts) - 命令行工具主入口，定义了所有子命令
+- [src/index.ts](mdc:src/index.ts) - 库的主入口文件，提供给其他模块进行二次开发
+
+### 核心模块
+- `src/core/` - 核心业务逻辑
+  - `src/core/review/` - 代码 Review 相关功能，分为 **PR review** 与 **模块 review**
+  - `src/core/test/` - 测试用例生成相关功能，分为 **unit test** 与 **e2e test**
+- `src/services/` - 服务层
+  - [src/services/gemini.ts](mdc:src/services/gemini.ts) - Gemini AI 服务
+  - [src/services/config.ts](mdc:src/services/config.ts) - 配置管理
+- `src/utils/` - 工具函数
+- `src/__tests__/` - 测试文件
+
+### 配置文件
+- [package.json](mdc:package.json) - 项目配置和依赖
+- [tsconfig.json](mdc:tsconfig.json) - TypeScript 配置
+- [tsup.config.ts](mdc:tsup.config.ts) - 构建配置
+- [vitest.config.ts](mdc:vitest.config.ts) - 测试配置
+- [eslint.config.js](mdc:eslint.config.js) - 代码规范配置
+
+## 主要命令
+
+项目支持以下命令行功能：
+- `pr-review` - PR 代码 Review
+- `module-review` - 模块代码 Review
+- `unit-test` - 生成单元测试
+- `e2e-test` - 生成 E2E 测试
+- `doc` - 生成项目文档
+- `refactor` - 代码重构
+
+## 开发规范
+
+- 使用 TypeScript 严格模式
+- 遵循 ESM 模块规范
+- 使用 Zod 进行运行时类型验证
+- 使用 @antfu/eslint-config 代码规范
+- 使用 vitest 进行测试
