@@ -87,7 +87,7 @@ export class GeminiService {
     }
 
     const escapedPrompt = this.escapeMessage(prompt)
-    return ShellExecutor.getOutput(`gemini -p "${escapedPrompt}" -m ${this.config.model}`)
+    return ShellExecutor.getOutput($ => $`gemini -p "${escapedPrompt}" -m ${this.config.model}`)
   }
 
   /**
