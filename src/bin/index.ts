@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
+import process from 'node:process'
 import { Command } from 'commander'
 import pkg from '../../package.json' with { type: 'json' }
+import { reviewModule } from '../core/review/module'
+import { reviewPr } from '../core/review/pr'
+import { Validators } from '../utils/validators'
 
 const program = new Command()
 
@@ -18,8 +22,24 @@ program.command('pr-review')
   .requiredOption('-t, --target-branch <targetBranch>', '目标分支名称')
   .option('-o, --output <output>', '输出文件路径')
   .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
-  .action(async (_options: unknown) => {
-    globalThis.console.log('Review PR')
+  .action(async (options: unknown) => {
+    // 验证输入参数
+    const validation = Validators.validatePrReviewOptions(options)
+    if (!validation.success) {
+      globalThis.console.error(`参数验证失败: ${validation.error}`)
+      process.exit(1)
+    }
+
+    const { data } = validation
+
+    try {
+      // 调用 PR review 函数
+      await reviewPr(data)
+    }
+    catch (error) {
+      globalThis.console.error(`PR Review 执行失败: ${error instanceof Error ? error.message : String(error)}`)
+      process.exit(1)
+    }
   })
 
 // 根据模块 review 代码
@@ -30,8 +50,24 @@ program.command('module-review')
   .requiredOption('-i, --input <inputs...>', '输入文件路径（支持多个文件）')
   .option('-o, --output <output>', '输出文件路径')
   .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
-  .action(async (_options: unknown) => {
-    globalThis.console.log('Review module')
+  .action(async (options: unknown) => {
+    // 验证输入参数
+    const validation = Validators.validateModuleReviewOptions(options)
+    if (!validation.success) {
+      globalThis.console.error(`参数验证失败: ${validation.error}`)
+      process.exit(1)
+    }
+
+    const { data } = validation
+
+    try {
+      // 调用 Module review 函数
+      await reviewModule(data)
+    }
+    catch (error) {
+      globalThis.console.error(`Module Review 执行失败: ${error instanceof Error ? error.message : String(error)}`)
+      process.exit(1)
+    }
   })
 
 program.command('unit-test')
