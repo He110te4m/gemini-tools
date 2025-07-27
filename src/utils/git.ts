@@ -16,10 +16,12 @@ export interface GitCommitInfo {
 export class Git {
   /**
    * 获取两个分支之间的变更文件列表
+   * sourceBranch 将合入 targetBranch，所以查看 source 相对于 target 的变更
    */
   static async getChangedFiles(sourceBranch: string, targetBranch: string): Promise<string[]> {
     try {
-      const output = await ShellExecutor.getOutput($ => $`git diff --name-only ${sourceBranch}..${targetBranch}`)
+      // 查看 source 分支相对于 target 分支的变更文件
+      const output = await ShellExecutor.getOutput($ => $`git diff --name-only ${targetBranch}..${sourceBranch}`)
 
       if (!output.trim()) {
         return []
@@ -35,10 +37,12 @@ export class Git {
 
   /**
    * 获取指定文件的 diff 内容
+   * sourceBranch 将合入 targetBranch，所以查看 source 相对于 target 的变更
    */
   static async getFileDiff(sourceBranch: string, targetBranch: string, filePath: string): Promise<string> {
     try {
-      const output = await ShellExecutor.getOutput($ => $`git diff ${sourceBranch}..${targetBranch} -- "${filePath}"`)
+      // 查看 source 分支相对于 target 分支的文件变更
+      const output = await ShellExecutor.getOutput($ => $`git diff ${targetBranch}..${sourceBranch} -- "${filePath}"`)
       return output
     }
     catch (error) {
@@ -49,6 +53,7 @@ export class Git {
 
   /**
    * 获取所有变更文件的 diff 信息
+   * sourceBranch 将合入 targetBranch，所以查看 source 相对于 target 的变更
    */
   static async getAllFileDiffs(sourceBranch: string, targetBranch: string): Promise<Record<string, GitDiffInfo>> {
     const changedFiles = await this.getChangedFiles(sourceBranch, targetBranch)
@@ -95,10 +100,12 @@ export class Git {
 
   /**
    * 获取两个分支之间的所有 commit 信息
+   * sourceBranch 将合入 targetBranch，所以查看 source 相对于 target 的 commit
    */
   static async getCommitsBetweenBranches(sourceBranch: string, targetBranch: string): Promise<GitCommitInfo[]> {
     try {
-      const output = await ShellExecutor.getOutput($ => $`git log ${sourceBranch}..${targetBranch} --pretty=format:"%H|%an|%ad|%s" --date=iso`)
+      // 查看 source 分支相对于 target 分支的 commit
+      const output = await ShellExecutor.getOutput($ => $`git log ${targetBranch}..${sourceBranch} --pretty=format:"%H|%an|%ad|%s" --date=iso`)
 
       if (!output.trim()) {
         return []

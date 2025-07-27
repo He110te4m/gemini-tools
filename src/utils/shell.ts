@@ -25,8 +25,6 @@ export class ShellExecutor {
    */
   static async execute(callCommand: ($: Shell) => ProcessPromise, options: ShellOptions = {}): Promise<ShellResult> {
     try {
-      logger.info(`执行命令`)
-
       const $$ = $(options)
 
       const result = await callCommand($$)

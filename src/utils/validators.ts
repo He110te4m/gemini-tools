@@ -9,7 +9,7 @@ export const GeminiConfigSchema = z.object({
 // 环境变量验证模式
 export const EnvSchema = z.object({
   GEMINI_API_KEY: z.string().min(1, 'GEMINI_API_KEY 环境变量必须设置'),
-  GEMINI_MODEL: z.enum(['gemini-pro', 'gemini-pro-vision']).default('gemini-pro'),
+  GEMINI_MODEL: z.string().default('gemini-2.5-pro'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error']).default('info'),
 })
