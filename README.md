@@ -1,16 +1,17 @@
 # Gemini Tools
 
-一个基于 Google Gemini AI 的现代化命令行工具集，提供聊天、代码生成、代码分析和 Shell 执行功能。
+一个基于 Google Gemini AI 的现代化命令行工具集，提供代码 Review、测试生成、文档生成和代码重构功能。
 
 ## ✨ 特性
 
-- 🤖 **AI 聊天**: 与 Gemini AI 进行自然语言对话
-- 💻 **代码生成**: 根据描述生成各种编程语言的代码
-- 🔍 **代码分析**: 分析代码的复杂度、安全性、性能和风格
-- ⚡ **Shell 执行**: 智能执行和优化 Shell 命令
+- 🔍 **PR 代码 Review**: 基于 Git diff 进行 PR 代码审查
+- 📁 **模块代码 Review**: 对指定文件或目录进行代码审查
+- 🧪 **单元测试生成**: 自动生成单元测试用例
+- 🚀 **E2E 测试生成**: 生成端到端测试用例
+- 📚 **文档生成**: 自动生成项目文档
+- 🔧 **代码重构**: 智能代码重构建议
 - 🎯 **命令行模式**: 简洁的命令行接口，适合脚本化使用
-- 🔧 **gemini-cli 集成**: 使用 gemini-cli 进行模型调用
-- 🚀 **现代工具链**: 使用 tsup 构建，tsx 开发，vitest 测试
+- 🚀 **现代工具链**: 使用 tsup 构建，vitest 测试
 - 📦 **ESM 支持**: 原生 ESM 模块，支持现代 JavaScript 特性
 - 🛡️ **类型安全**: 使用 Zod 进行运行时类型验证
 - 🎨 **代码规范**: 使用 @antfu/eslint-config 保持代码质量
@@ -19,7 +20,7 @@
 
 - **Node.js**: >= 20.0.0
 - **pnpm**: >= 7.0.0
-- **gemini-cli**: 需要全局安装
+- **@google/gemini-cli**: 需要全局安装
 
 ## 🚀 快速开始
 
@@ -32,8 +33,8 @@ npm install -g gemini-tools
 # 或者使用 pnpm
 pnpm add -g gemini-tools
 
-# 安装 gemini-cli（必需）
-npm install -g gemini-cli
+# 安装 @google/gemini-cli（必需）
+npm install -g @google/gemini-cli
 ```
 
 ### 2. 配置
@@ -59,89 +60,114 @@ NODE_ENV=development
 LOG_LEVEL=info
 ```
 
-**注意**: 本项目使用 ESM 格式，需要 Node.js 20+ 版本，并且需要安装 gemini-cli。
+**注意**: 本项目使用 ESM 格式，需要 Node.js 20+ 版本，并且需要安装 @google/gemini-cli。
 
 ## 💡 使用方法
 
-### 聊天模式
+### PR 代码 Review
 
 ```bash
-# 简单聊天
-gemini-tools -m chat -p "你好，请介绍一下自己"
+# 基本 PR Review
+gemini-tools pr-review -s feature-branch -t main
 
-# 复杂对话
-gemini-tools -m chat -p "请帮我分析一下这段代码的性能问题：function fibonacci(n) { return n <= 1 ? n : fibonacci(n-1) + fibonacci(n-2); }"
+# 指定输出文件
+gemini-tools pr-review -s feature-branch -t main -o review-report.md
+
+# 自定义模型
+gemini-tools pr-review -s feature-branch -t main -m gemini-pro
+
+# 添加自定义提示词
+gemini-tools pr-review -s feature-branch -t main --additional-prompts "重点关注性能问题" "检查安全漏洞"
+
+# 忽略特定文件
+gemini-tools pr-review -s feature-branch -t main --ignore "*.test.js" "node_modules/**"
 ```
 
-### 代码生成模式
+### 模块代码 Review
 
 ```bash
-# 生成 Python 快速排序
-gemini-tools -m code -p "实现一个快速排序算法" -l "python" -o "quicksort.py"
+# 审查单个文件
+gemini-tools module-review -i src/main.js
 
-# 生成 React 组件
-gemini-tools -m code -p "创建一个 React 计数器组件" -l "javascript" -o "Counter.jsx"
+# 审查多个文件
+gemini-tools module-review -i src/main.js src/utils.js
 
-# 生成 TypeScript 类型定义
-gemini-tools -m code -p "定义用户接口类型" -l "typescript"
+# 指定输出文件
+gemini-tools module-review -i src/main.js -o module-review.md
+
+# 自定义模型和提示词
+gemini-tools module-review -i src/main.js -m gemini-pro --additional-prompts "检查代码规范" "分析复杂度"
 ```
 
-### 代码分析模式
+### 单元测试生成
 
 ```bash
-# 分析 JavaScript 文件
-gemini-tools -m analyze -f "src/main.js" -l "javascript"
+# 为单个文件生成单元测试
+gemini-tools unit-test -i src/main.js -o tests/main.test.js
 
-# 分析 Python 文件的安全性
-gemini-tools -m analyze -f "app.py" -l "python" -t "security"
+# 为整个目录生成测试
+gemini-tools unit-test -i src/ -o tests/
 
-# 分析代码性能
-gemini-tools -m analyze -f "algorithm.js" -l "javascript" -t "performance"
+# 自定义测试生成规则
+gemini-tools unit-test -i src/main.js -o tests/main.test.js --additional-prompts "使用 Jest 框架" "包含边界条件测试"
+
+# 忽略特定文件模式
+gemini-tools unit-test -i src/ -o tests/ --ignore "*.test.js" "node_modules/**"
 ```
 
-### Shell 执行模式
+### E2E 测试生成
 
 ```bash
-# 查找并统计文件
-gemini-tools -m shell -p "查找所有 .js 文件并统计行数"
-
-# 系统信息
-gemini-tools -m shell -p "显示系统内存和磁盘使用情况"
-
-# 安全模式执行
-gemini-tools -m shell -p "删除临时文件" -s
+# 生成 E2E 测试（功能待实现）
+gemini-tools e2e-test src/app.js -o tests/e2e/app.test.js
 ```
 
-## 📊 分析类型
+### 文档生成
 
-| 类型 | 描述 | 适用场景 |
-|------|------|----------|
-| `complexity` | 复杂度分析 | 算法优化、代码重构 |
-| `security` | 安全性分析 | 安全审计、漏洞检测 |
-| `performance` | 性能分析 | 性能优化、瓶颈识别 |
-| `style` | 代码风格分析 | 代码审查、规范检查 |
-| `comprehensive` | 综合分析 | 全面评估、质量检查 |
+```bash
+# 生成项目文档（功能待实现）
+gemini-tools doc src/main.js -o docs/main.md
+```
+
+### 代码重构
+
+```bash
+# 代码重构（功能待实现）
+gemini-tools refactor src/main.js -o src/main.refactored.js
+```
 
 ## 🎛️ 命令行选项
 
-### 通用选项
+### PR Review 命令
 
-| 选项 | 简写 | 描述 | 示例 |
+| 选项 | 简写 | 描述 | 必需 |
 |------|------|------|------|
-| `--mode` | `-m` | 运行模式 | `chat\|code\|analyze\|shell` |
-| `--prompt` | `-p` | 输入提示或消息 | `"你的提示内容"` |
-| `--file` | `-f` | 文件路径 | `src/main.js` |
-| `--language` | `-l` | 编程语言 | `javascript\|python\|typescript` |
-| `--output` | `-o` | 输出文件路径 | `output.js` |
-| `--type` | `-t` | 分析类型 | `complexity\|security\|performance` |
-| `--safe` | `-s` | 安全模式 | Shell 执行时确认 |
+| `--source-branch` | `-s` | 源分支名称 | ✅ |
+| `--target-branch` | `-t` | 目标分支名称 | ✅ |
+| `--output` | `-o` | 输出文件路径 | ❌ |
+| `--model` | `-m` | 模型名称 | ❌ |
+| `--additional-prompts` | - | 自定义提示词 | ❌ |
+| `--ignore` | - | 忽略文件路径 | ❌ |
 
-### 模式说明
+### Module Review 命令
 
-- **`chat`**: 与 AI 进行自然语言对话
-- **`code`**: 根据描述生成代码
-- **`analyze`**: 分析现有代码
-- **`shell`**: 执行和优化 Shell 命令
+| 选项 | 简写 | 描述 | 必需 |
+|------|------|------|------|
+| `--input` | `-i` | 输入文件路径（支持多个） | ✅ |
+| `--output` | `-o` | 输出文件路径 | ❌ |
+| `--model` | `-m` | 模型名称 | ❌ |
+| `--additional-prompts` | - | 自定义提示词 | ❌ |
+| `--ignore` | - | 忽略文件路径 | ❌ |
+
+### Unit Test 命令
+
+| 选项 | 简写 | 描述 | 必需 |
+|------|------|------|------|
+| `--input` | `-i` | 输入路径（文件或目录） | ✅ |
+| `--output` | `-o` | 输出文件路径 | ✅ |
+| `--model` | `-m` | 模型名称 | ❌ |
+| `--additional-prompts` | - | 自定义提示词 | ❌ |
+| `--ignore` | - | 忽略文件模式 | ❌ |
 
 ## 🛠️ 开发
 
@@ -158,6 +184,9 @@ pnpm install
 # 配置环境变量
 cp env.example .env
 # 编辑 .env 文件，添加你的 API Key
+
+# 确保已安装 @google/gemini-cli
+npm install -g @google/gemini-cli
 ```
 
 ### 开发命令
@@ -166,7 +195,7 @@ cp env.example .env
 # 构建项目
 pnpm build
 
-# 开发模式（使用 tsx 直接执行 TypeScript）
+# 开发模式
 pnpm dev
 
 # 运行测试（一次性）
@@ -189,15 +218,24 @@ pnpm lint:fix
 
 ```
 src/
-├── core/           # 核心模块
-│   ├── config.ts   # 配置管理
-│   └── gemini-service.ts  # Gemini 服务
-├── utils/          # 工具模块
-│   ├── logger.ts   # 日志工具
-│   ├── shell.ts    # Shell 执行工具
-│   └── validators.ts  # 验证工具
 ├── bin/            # 命令行工具
 │   └── index.ts    # 统一入口文件
+├── core/           # 核心模块
+│   ├── review/     # 代码审查功能
+│   │   ├── pr.ts   # PR Review
+│   │   └── module.ts # 模块 Review
+│   └── test/       # 测试生成功能
+│       └── unit.ts # 单元测试生成
+├── services/       # 服务层
+│   ├── gemini.ts   # Gemini AI 服务
+│   └── config.ts   # 配置管理
+├── utils/          # 工具模块
+│   ├── logger.ts   # 日志工具
+│   ├── fs.ts       # 文件系统工具
+│   ├── git.ts      # Git 工具
+│   ├── prompt.ts   # 提示词处理
+│   ├── shell.ts    # Shell 执行工具
+│   └── validators.ts  # 验证工具
 └── __tests__/      # 测试文件
 ```
 
@@ -207,46 +245,46 @@ src/
 |------|------|------|
 | **Node.js** | >= 20.0.0 | 运行时环境 |
 | **pnpm** | >= 7.0.0 | 包管理器 |
+| **@google/gemini-cli** | 最新版本 | Gemini CLI 工具 |
 | **TypeScript** | v5.8.3 | 类型系统 |
 | **ESLint** | @antfu/eslint-config | 代码规范 |
 | **Vitest** | v3.2.4 | 测试框架 |
 | **tsup** | v8.5.0 | 构建工具 |
-| **tsx** | v4.20.3 | 开发执行 |
 | **Zod** | v4.0.10 | 类型验证 |
 
 ## 📝 示例
 
-### 1. 代码生成示例
+### 1. PR Review 示例
 
 ```bash
-# 生成一个 React Hook
-gemini-tools -m code -p "创建一个自定义 Hook 用于管理表单状态" -l "typescript" -o "useForm.ts"
+# 基本 PR Review
+gemini-tools pr-review -s feature/new-feature -t main
 
-# 生成 API 客户端
-gemini-tools -m code -p "创建一个 REST API 客户端类" -l "python" -o "api_client.py"
+# 带自定义规则的 Review
+gemini-tools pr-review -s feature/new-feature -t main \
+  --additional-prompts "检查 TypeScript 类型安全" "关注性能优化" \
+  --ignore "*.test.ts" "docs/**"
 ```
 
-### 2. 代码分析示例
+### 2. 模块 Review 示例
 
 ```bash
-# 分析算法复杂度
-gemini-tools -m analyze -f "sorting.js" -l "javascript" -t "complexity"
+# 审查核心模块
+gemini-tools module-review -i src/core/ -o reviews/core-review.md
 
-# 安全审计
-gemini-tools -m analyze -f "auth.js" -l "javascript" -t "security"
-
-# 性能优化建议
-gemini-tools -m analyze -f "database.js" -l "javascript" -t "performance"
+# 审查特定文件
+gemini-tools module-review -i src/services/gemini.ts src/utils/logger.ts
 ```
 
-### 3. Shell 命令优化
+### 3. 单元测试生成示例
 
 ```bash
-# 优化文件查找命令
-gemini-tools -m shell -p "查找所有 .log 文件并删除超过 30 天的"
+# 为工具函数生成测试
+gemini-tools unit-test -i src/utils/validators.ts -o tests/utils/validators.test.ts
 
-# 系统监控
-gemini-tools -m shell -p "监控 CPU 和内存使用情况，超过阈值时发送通知"
+# 为整个服务模块生成测试
+gemini-tools unit-test -i src/services/ -o tests/services/ \
+  --additional-prompts "使用 Vitest 框架" "包含错误处理测试"
 ```
 
 ## 🤝 贡献
