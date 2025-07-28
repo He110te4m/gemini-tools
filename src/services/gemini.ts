@@ -50,14 +50,14 @@ export class Gemini {
   /**
    * 运行 Gemini 命令
    */
-  public async run(prompt: string): Promise<string> {
+  public async run(promptFile: string): Promise<string> {
     if (!this.isAvailable) {
       throw new Error('Gemini CLI 不可用')
     }
 
     // 使用 zx 的 pipe 功能，通过 stdin 传递 prompt
     return ShellExecutor.getOutput($ =>
-      $`echo ${prompt} | gemini --yolo -m ${this.config.model}`,
+      $`gemini --yolo -m ${this.config.model} < ${promptFile}`,
     )
   }
 
@@ -72,7 +72,7 @@ export class Gemini {
 /**
  * 直接暴露的 run 函数，方便外部调用
  */
-export async function run(prompt: string): Promise<string> {
+export async function run(promptFile: string): Promise<string> {
   const service = Gemini.getInstance()
-  return service.run(prompt)
+  return service.run(promptFile)
 }

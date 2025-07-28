@@ -1,11 +1,15 @@
 import type { PrReviewOptions } from '../../utils/validators'
-import { readFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { dirname, resolve } from 'node:path'
 import process from 'node:process'
+import { fileURLToPath } from 'node:url'
 import { run } from '../../services/gemini'
 import { File } from '../../utils/fs.js'
 import { Git } from '../../utils/git.js'
 import { logger } from '../../utils/logger.js'
+
+// 获取当前文件的目录路径（ES 模块中的 __dirname 替代方案）
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = dirname(__filename)
 
 export async function reviewPr(options: PrReviewOptions) {
   try {
@@ -107,10 +111,9 @@ export async function reviewPr(options: PrReviewOptions) {
     logger.debug(`USER_DESCRIPTION: ${process.env.USER_DESCRIPTION}`)
     logger.debug(`ADDITIONAL_INSTRUCTIONS: ${process.env.ADDITIONAL_INSTRUCTIONS}`)
 
-    const prompt = await readFile(new URL('./prompt.txt', import.meta.url))
-
     // 从 Gemini 获取 review 结果
-    const reviewResult = await run(prompt.toString())
+    const promptFile = resolve(__dirname, 'prompt.txt')
+    const reviewResult = await run(promptFile)
     logger.info(`Gemini 返回的 review 结果: ${reviewResult}`)
 
     // 一般不需要输出， Gemini 的 Prompt 已经要求输出了，再输出会覆盖掉原有的 review 内容
