@@ -197,51 +197,45 @@ async function executeGeminiReview(): Promise<string> {
  * 主函数：执行 PR Review
  */
 export async function reviewPr(options: PrReviewOptions): Promise<void> {
-  try {
-    logger.info('开始 PR Review 流程')
+  logger.info('开始 PR Review 流程')
 
-    // 验证 Git 环境
-    await validateGitEnvironment(options)
+  // 验证 Git 环境
+  await validateGitEnvironment(options)
 
-    // 并行获取所有必要信息
-    const [reviewFiles, reviewFilesDiff, userDescription] = await Promise.all([
-      setupChangedFiles(options),
-      setupFileDiffs(options),
-      generateUserDescription(options),
-    ])
+  // 并行获取所有必要信息
+  const [reviewFiles, reviewFilesDiff, userDescription] = await Promise.all([
+    setupChangedFiles(options),
+    setupFileDiffs(options),
+    generateUserDescription(options),
+  ])
 
-    // 处理额外提示（异步操作）
-    const additionalInstructions = await processAdditionalPrompts(options.additionalPrompts)
-    logger.info(`设置 ADDITIONAL_INSTRUCTIONS: ${additionalInstructions.length} 字符`)
+  // 处理额外提示（异步操作）
+  const additionalInstructions = await processAdditionalPrompts(options.additionalPrompts)
+  logger.info(`设置 ADDITIONAL_INSTRUCTIONS: ${additionalInstructions.length} 字符`)
 
-    // 设置输出文件路径
-    const outputFile = resolve(process.cwd(), options.output || 'review.md')
+  // 设置输出文件路径
+  const outputFile = resolve(process.cwd(), options.output || 'review.md')
 
-    // 构建环境变量对象
-    const env: ReviewEnvironment = {
-      reviewFiles,
-      reviewFilesDiff,
-      userDescription,
-      additionalInstructions,
-      outputFile,
-    }
-
-    // 设置环境变量
-    setupEnvironmentVariables(env)
-    logger.success('PR Review 环境变量设置完成')
-
-    // 记录环境变量摘要
-    logEnvironmentSummary(env)
-
-    // 执行 Gemini Review
-    await executeGeminiReview()
-
-    // 一般不需要输出， Gemini 的 Prompt 已经要求输出了，再输出会覆盖掉原有的 review 内容
-    // // 输出 review 结果
-    // return writeFile(new URL(options.output || 'review.md', import.meta.url), reviewResult)
+  // 构建环境变量对象
+  const env: ReviewEnvironment = {
+    reviewFiles,
+    reviewFilesDiff,
+    userDescription,
+    additionalInstructions,
+    outputFile,
   }
-  catch (error) {
-    logger.error('PR Review 流程失败', error)
-    throw error
-  }
+
+  // 设置环境变量
+  setupEnvironmentVariables(env)
+  logger.success('PR Review 环境变量设置完成')
+
+  // 记录环境变量摘要
+  logEnvironmentSummary(env)
+
+  // 执行 Gemini Review
+  await executeGeminiReview()
+
+  // 一般不需要输出， Gemini 的 Prompt 已经要求输出了，再输出会覆盖掉原有的 review 内容
+  // // 输出 review 结果
+  // return writeFile(new URL(options.output || 'review.md', import.meta.url), reviewResult)
 }
