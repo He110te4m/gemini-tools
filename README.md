@@ -53,9 +53,7 @@ vim .env
 
 ```env
 GEMINI_API_KEY=your_api_key_here
-GEMINI_MODEL=gemini-pro
-GEMINI_TEMPERATURE=0.7
-GEMINI_MAX_TOKENS=2048
+GEMINI_MODEL=gemini-2.5-pro
 NODE_ENV=development
 LOG_LEVEL=info
 ```
@@ -320,8 +318,6 @@ gemini-tools unit-test -i src/services/ -o tests/services/ \
 如果你遇到问题或有建议，请：
 
 - 📧 创建 [Issue](https://github.com/yourusername/gemini-tools/issues)
-- 💬 参与 [Discussions](https://github.com/yourusername/gemini-tools/discussions)
-- 📖 查看 [Wiki](https://github.com/yourusername/gemini-tools/wiki)
 
 ---
 
