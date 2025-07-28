@@ -207,6 +207,7 @@ function logEnvironmentSummary(env: ReviewEnvironment): void {
   logger.debug(`REVIEW_FILES_DIFF: ${env.reviewFilesDiff.substring(0, 100)}...`)
   logger.debug(`USER_DESCRIPTION: ${env.userDescription}`)
   logger.debug(`ADDITIONAL_INSTRUCTIONS: ${env.additionalInstructions}`)
+  logger.debug(`OUTPUT_FILE: ${env.outputFile}`)
 }
 
 /**
@@ -214,6 +215,8 @@ function logEnvironmentSummary(env: ReviewEnvironment): void {
  */
 async function executeGeminiReview(): Promise<string> {
   const promptFile = resolve(__dirname, 'prompt.txt')
+  logger.info(`Gemini 执行的 prompt 文件: ${promptFile}`)
+
   const reviewResult = await run(promptFile)
   logger.info(`Gemini 返回的 review 结果: ${reviewResult}`)
 
