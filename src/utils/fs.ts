@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync } from 'node:fs'
+import { access, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import process from 'node:process'
 import { logger } from './logger.js'
@@ -12,15 +12,13 @@ export interface FileInfo {
 
 export class File {
   /**
-   * 读取文件内容
+   * 异步读取文件内容
    */
-  static readFile(filePath: string): string {
+  static async readFile(filePath: string): Promise<string> {
     try {
       const absolutePath = resolve(filePath)
-      if (!existsSync(absolutePath)) {
-        throw new Error(`文件不存在: ${absolutePath}`)
-      }
-      return readFileSync(absolutePath, 'utf-8')
+      const content = await readFile(absolutePath, 'utf-8')
+      return content
     }
     catch (error) {
       logger.error(`读取文件失败: ${filePath}`, error)
@@ -29,12 +27,12 @@ export class File {
   }
 
   /**
-   * 写入文件内容
+   * 异步写入文件内容
    */
-  static writeFile(filePath: string, content: string): void {
+  static async writeFile(filePath: string, content: string): Promise<void> {
     try {
       const absolutePath = resolve(filePath)
-      writeFileSync(absolutePath, content, 'utf-8')
+      await writeFile(absolutePath, content, 'utf-8')
       logger.info(`文件写入成功: ${absolutePath}`)
     }
     catch (error) {
@@ -44,12 +42,13 @@ export class File {
   }
 
   /**
-   * 检查文件是否存在
+   * 异步检查文件是否存在
    */
-  static fileExists(filePath: string): boolean {
+  static async fileExists(filePath: string): Promise<boolean> {
     try {
       const absolutePath = resolve(filePath)
-      return existsSync(absolutePath)
+      await access(absolutePath)
+      return true
     }
     catch {
       return false
@@ -73,15 +72,15 @@ export class File {
   }
 
   /**
-   * 读取多个文件并返回文件信息数组
+   * 异步读取多个文件并返回文件信息数组
    */
-  static readMultipleFiles(filePaths: string[]): FileInfo[] {
-    return filePaths.map((filePath) => {
+  static async readMultipleFiles(filePaths: string[]): Promise<FileInfo[]> {
+    const filePromises = filePaths.map(async (filePath) => {
       const absolutePath = this.getAbsolutePath(filePath)
       const relativePath = this.getRelativePath(filePath)
 
       try {
-        const content = this.readFile(filePath)
+        const content = await this.readFile(filePath)
         return {
           absolutePath,
           relativePath,
@@ -95,6 +94,9 @@ export class File {
           relativePath,
         }
       }
-    }).filter(file => file.content !== undefined)
+    })
+
+    const results = await Promise.all(filePromises)
+    return results.filter(file => file.content !== undefined)
   }
 }

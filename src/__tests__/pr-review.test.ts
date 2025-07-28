@@ -7,6 +7,7 @@ import { Git } from '../utils/git.js'
 vi.mock('../utils/git.js')
 vi.mock('../utils/fs.js')
 vi.mock('../utils/logger.js')
+vi.mock('../services/gemini.js')
 
 describe('reviewPr', () => {
   beforeEach(() => {
@@ -41,7 +42,11 @@ describe('reviewPr', () => {
 
     // Mock 文件系统工具
     const mockFile = vi.mocked(File)
-    mockFile.fileExists.mockReturnValue(false)
+    mockFile.fileExists.mockResolvedValue(false)
+
+    // Mock Gemini 服务
+    const { run } = await import('../services/gemini.js')
+    vi.mocked(run).mockResolvedValue('Review completed')
 
     const options = {
       sourceBranch: 'feature',
@@ -69,8 +74,12 @@ describe('reviewPr', () => {
 
     // Mock 文件系统工具
     const mockFile = vi.mocked(File)
-    mockFile.fileExists.mockReturnValue(true)
-    mockFile.readFile.mockReturnValue('focus on security')
+    mockFile.fileExists.mockResolvedValue(true)
+    mockFile.readFile.mockResolvedValue('focus on security')
+
+    // Mock Gemini 服务
+    const { run } = await import('../services/gemini.js')
+    vi.mocked(run).mockResolvedValue('Review completed')
 
     const options = {
       sourceBranch: 'feature',
