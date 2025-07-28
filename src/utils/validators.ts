@@ -39,6 +39,7 @@ export const UnitTestOptionsSchema = z.object({
   output: z.string().min(1, '输出文件路径不能为空'),
   model: z.string().optional(),
   additionalPrompts: z.array(z.string()).optional(),
+  ignores: z.array(z.string()).optional(),
 })
 
 // 导出类型

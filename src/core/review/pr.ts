@@ -2,8 +2,8 @@ import type { PrReviewOptions } from '../../utils/validators'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
-import { minimatch } from 'minimatch'
 import { run } from '../../services/gemini'
+import { File } from '../../utils/fs'
 import { Git } from '../../utils/git'
 import { logger } from '../../utils/logger'
 import { processAdditionalPrompts } from '../../utils/prompt'
@@ -22,29 +22,6 @@ interface ReviewEnvironment {
 }
 
 /**
- * 检查文件是否被忽略
- */
-function isFileIgnored(filePath: string, ignorePatterns?: string[]): boolean {
-  if (!ignorePatterns || ignorePatterns.length === 0) {
-    return false
-  }
-
-  for (const pattern of ignorePatterns) {
-    try {
-      if (minimatch(filePath, pattern)) {
-        logger.debug(`文件 ${filePath} 匹配忽略模式 ${pattern}`)
-        return true
-      }
-    }
-    catch (error) {
-      logger.warn(`无效的忽略模式: ${pattern}`, error)
-    }
-  }
-
-  return false
-}
-
-/**
  * 过滤文件列表，移除被忽略的文件
  */
 function filterIgnoredFiles(files: string[], ignorePatterns?: string[]): string[] {
@@ -52,7 +29,7 @@ function filterIgnoredFiles(files: string[], ignorePatterns?: string[]): string[
     return files
   }
 
-  const filteredFiles = files.filter(file => !isFileIgnored(file, ignorePatterns))
+  const filteredFiles = files.filter(file => !File.isFileIgnored(file, ignorePatterns))
 
   if (filteredFiles.length !== files.length) {
     const ignoredCount = files.length - filteredFiles.length
@@ -111,7 +88,7 @@ async function setupFileDiffs(options: PrReviewOptions): Promise<string> {
   // 过滤掉被忽略的文件
   const filteredDiffs: Record<string, any> = {}
   for (const [filePath, diffInfo] of Object.entries(fileDiffs)) {
-    const isIgnored = isFileIgnored(filePath, options.ignores)
+    const isIgnored = File.isFileIgnored(filePath, options.ignores)
     if (!isIgnored) {
       filteredDiffs[filePath] = diffInfo
     }

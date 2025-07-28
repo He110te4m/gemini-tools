@@ -74,17 +74,28 @@ program.command('module-review')
 
 program.command('unit-test')
   .description('生成单元测试')
-  .requiredOption('-i, --input <input>', '输入文件路径，支持目录与文件')
+  .requiredOption('-i, --input <input>', '输入路径（文件或目录），目录将递归处理所有文件')
   .requiredOption('-o, --output <output>', '输出文件路径')
   .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
-  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
+  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义测试生成规则')
+  .option('--ignore <ignores...>', '忽略文件模式（支持 glob 模式，如 *.test.js, node_modules/**）')
   .action(async (options: unknown) => {
     const validation = Validators.validateUnitTestOptions(options)
     if (!validation.success) {
       globalThis.console.error(`参数验证失败: ${validation.error}`)
       process.exit(1)
     }
-    unitTest(validation.data)
+
+    const { data } = validation
+
+    try {
+      // 调用单元测试生成函数
+      await unitTest(data)
+    }
+    catch (error) {
+      globalThis.console.error(`单元测试生成执行失败: ${error instanceof Error ? error.message : String(error)}`)
+      process.exit(1)
+    }
   })
 
 program.command('e2e-test')
