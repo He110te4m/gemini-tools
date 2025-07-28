@@ -1,4 +1,5 @@
 import chalk from 'chalk'
+import { getEnvConfig } from '../services/config'
 
 export enum LogLevel {
   DEBUG = 0,
@@ -12,7 +13,7 @@ export class Logger {
   private logLevel: LogLevel
 
   private constructor() {
-    this.logLevel = LogLevel.INFO
+    this.logLevel = LogLevel[getEnvConfig().LOG_LEVEL]
   }
 
   public static getInstance(): Logger {
