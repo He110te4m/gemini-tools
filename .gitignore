@@ -59,7 +59,6 @@ jspm_packages/
 .yarn-integrity
 
 # pnpm
-pnpm-lock.yaml
 .pnpm-store/
 
 # dotenv environment variables file
