@@ -47,7 +47,7 @@ program.command('pr-review')
 // 根据模块 review 代码
 program.command('module-review')
   .description('Review 代码')
-  .requiredOption('-i, --input <inputs...>', '输入文件路径（支持多个文件）')
+  .requiredOption('-i, --input <input>', '输入文件路径（支持目录，可以使用 glob 排除）')
   .option('-o, --output <output>', '输出文件路径')
   .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
   .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
