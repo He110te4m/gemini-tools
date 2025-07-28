@@ -7,7 +7,8 @@ Start by running these commands to gather the required data:
 2. Run: echo "$REVIEW_FILES_DIFF" to see the full diff (JSON format)
 3. Run: echo "$USER_DESCRIPTION" to see how the user describes his changes
 4. Run: echo "$ADDITIONAL_INSTRUCTIONS" to see any specific review instructions from the user
-5. For any specific files, use: cat filename, head -50 filename, or tail -50 filename
+5. Run: echo "$OUTPUT_FILE" to get the outout filename
+6. For any specific files, use: cat filename, head -50 filename, or tail -50 filename
 
 Additional Review Instructions:
 If ADDITIONAL_INSTRUCTIONS contains text, prioritize those specific areas or focus points in your review.
