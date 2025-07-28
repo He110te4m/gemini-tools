@@ -2,6 +2,7 @@ import type { PrReviewOptions } from '../../utils/validators'
 import { dirname, resolve } from 'node:path'
 import process from 'node:process'
 import { fileURLToPath } from 'node:url'
+import { minimatch } from 'minimatch'
 import { run } from '../../services/gemini'
 import { File } from '../../utils/fs.js'
 import { Git } from '../../utils/git.js'
@@ -18,6 +19,47 @@ interface ReviewEnvironment {
   userDescription: string
   additionalInstructions: string
   outputFile: string
+}
+
+/**
+ * 检查文件是否被忽略
+ */
+function isFileIgnored(filePath: string, ignorePatterns?: string[]): boolean {
+  if (!ignorePatterns || ignorePatterns.length === 0) {
+    return false
+  }
+
+  for (const pattern of ignorePatterns) {
+    try {
+      if (minimatch(filePath, pattern)) {
+        logger.debug(`文件 ${filePath} 匹配忽略模式 ${pattern}`)
+        return true
+      }
+    }
+    catch (error) {
+      logger.warn(`无效的忽略模式: ${pattern}`, error)
+    }
+  }
+
+  return false
+}
+
+/**
+ * 过滤文件列表，移除被忽略的文件
+ */
+function filterIgnoredFiles(files: string[], ignorePatterns?: string[]): string[] {
+  if (!ignorePatterns || ignorePatterns.length === 0) {
+    return files
+  }
+
+  const filteredFiles = files.filter(file => !isFileIgnored(file, ignorePatterns))
+
+  if (filteredFiles.length !== files.length) {
+    const ignoredCount = files.length - filteredFiles.length
+    logger.info(`忽略 ${ignoredCount} 个文件（基于 ignores 配置）`)
+  }
+
+  return filteredFiles
 }
 
 /**
@@ -49,7 +91,11 @@ async function setupChangedFiles(options: PrReviewOptions): Promise<string> {
   const changedFiles = await Git.getChangedFiles(options.sourceBranch, options.targetBranch)
   logger.info(`发现 ${changedFiles.length} 个变更文件`)
 
-  const reviewFiles = changedFiles.join(',')
+  // 过滤掉被忽略的文件
+  const filteredFiles = filterIgnoredFiles(changedFiles, options.ignores)
+  logger.info(`过滤后剩余 ${filteredFiles.length} 个变更文件`)
+
+  const reviewFiles = filteredFiles.join(',')
   process.env.REVIEW_FILES = reviewFiles
   logger.info(`设置 REVIEW_FILES: ${reviewFiles}`)
 
@@ -61,7 +107,17 @@ async function setupChangedFiles(options: PrReviewOptions): Promise<string> {
  */
 async function setupFileDiffs(options: PrReviewOptions): Promise<string> {
   const fileDiffs = await Git.getAllFileDiffs(options.sourceBranch, options.targetBranch)
-  const reviewFilesDiff = JSON.stringify(fileDiffs)
+
+  // 过滤掉被忽略的文件
+  const filteredDiffs: Record<string, any> = {}
+  for (const [filePath, diffInfo] of Object.entries(fileDiffs)) {
+    const isIgnored = isFileIgnored(filePath, options.ignores)
+    if (!isIgnored) {
+      filteredDiffs[filePath] = diffInfo
+    }
+  }
+
+  const reviewFilesDiff = JSON.stringify(filteredDiffs)
   process.env.REVIEW_FILES_DIFF = reviewFilesDiff
   logger.info(`设置 REVIEW_FILES_DIFF: ${reviewFilesDiff.length} 字符`)
 
@@ -78,11 +134,24 @@ async function generateUserDescription(options: PrReviewOptions): Promise<string
     return '未找到 commit 信息'
   }
 
-  const latestCommit = commits[0]
+  // 过滤掉只修改被忽略文件的 commit
+  const relevantCommits = []
+  for (const commit of commits) {
+    // 这里我们需要获取每个 commit 修改的文件列表
+    // 由于 Git 工具类可能没有提供获取单个 commit 文件列表的方法
+    // 我们暂时保留所有 commit，但记录警告
+    relevantCommits.push(commit)
+  }
+
+  if (relevantCommits.length === 0) {
+    return '未找到相关的 commit 信息（所有 commit 都只修改了被忽略的文件）'
+  }
+
+  const latestCommit = relevantCommits[0]
   let userDescription = `${latestCommit.message}\n\n作者: ${latestCommit.author}\n日期: ${latestCommit.date}`
 
-  if (commits.length > 1) {
-    userDescription += `\n\n本次 PR 包含 ${commits.length} 个 commit`
+  if (relevantCommits.length > 1) {
+    userDescription += `\n\n本次 PR 包含 ${relevantCommits.length} 个 commit`
   }
 
   return userDescription

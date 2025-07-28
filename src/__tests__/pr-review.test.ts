@@ -92,6 +92,58 @@ describe('reviewPr', () => {
     expect(process.env.ADDITIONAL_INSTRUCTIONS).toBe('focus on security\n\nfocus on security')
   })
 
+  it('应该忽略指定的文件', async () => {
+    // Mock Git 工具
+    const mockGit = vi.mocked(Git)
+    mockGit.isGitRepository.mockResolvedValue(true)
+    mockGit.branchExists.mockResolvedValue(true)
+    mockGit.getChangedFiles.mockResolvedValue(['src/file1.ts', 'dist/file2.js', 'src/file3.ts'])
+    mockGit.getAllFileDiffs.mockResolvedValue({
+      'src/file1.ts': {
+        absolutePath: '/absolute/path/src/file1.ts',
+        diff: '@@ -1,3 +1,3 @@\n-old line\n+new line',
+      },
+      'dist/file2.js': {
+        absolutePath: '/absolute/path/dist/file2.js',
+        diff: '@@ -1,3 +1,3 @@\n-old line\n+new line',
+      },
+      'src/file3.ts': {
+        absolutePath: '/absolute/path/src/file3.ts',
+        diff: '@@ -1,3 +1,3 @@\n-old line\n+new line',
+      },
+    })
+    mockGit.getCommitsBetweenBranches.mockResolvedValue([
+      {
+        hash: 'abc123',
+        author: 'Test User',
+        date: '2024-01-01T00:00:00Z',
+        message: 'feat: add new feature',
+      },
+    ])
+
+    // Mock 文件系统工具
+    const mockFile = vi.mocked(File)
+    mockFile.fileExists.mockResolvedValue(false)
+
+    // Mock Gemini 服务
+    const { run } = await import('../services/gemini.js')
+    vi.mocked(run).mockResolvedValue('Review completed')
+
+    const options = {
+      sourceBranch: 'feature',
+      targetBranch: 'main',
+      additionalPrompts: [],
+      ignores: ['dist/**', '*.js'],
+    }
+
+    await reviewPr(options)
+
+    // 验证被忽略的文件不在结果中
+    expect(process.env.REVIEW_FILES).toBe('src/file1.ts,src/file3.ts')
+    expect(process.env.REVIEW_FILES).not.toContain('dist/file2.js')
+    expect(process.env.REVIEW_FILES).not.toContain('*.js')
+  })
+
   it('应该在非 Git 仓库中抛出错误', async () => {
     const mockGit = vi.mocked(Git)
     mockGit.isGitRepository.mockResolvedValue(false)
