@@ -1,6 +1,7 @@
-import { access, readFile, writeFile } from 'node:fs/promises'
-import { resolve } from 'node:path'
+import { access, readdir, readFile, stat, unlink, writeFile } from 'node:fs/promises'
+import { join, resolve } from 'node:path'
 import process from 'node:process'
+import { minimatch } from 'minimatch'
 import { logger } from './logger'
 
 export interface FileInfo {
@@ -98,5 +99,87 @@ export class File {
 
     const results = await Promise.all(filePromises)
     return results.filter(file => file.content !== undefined)
+  }
+
+  /**
+   * 检查文件是否被忽略
+   */
+  static isFileIgnored(filePath: string, ignorePatterns?: string[]): boolean {
+    if (!ignorePatterns || ignorePatterns.length === 0) {
+      return false
+    }
+
+    for (const pattern of ignorePatterns) {
+      try {
+        if (minimatch(filePath, pattern)) {
+          logger.debug(`文件 ${filePath} 匹配忽略模式 ${pattern}`)
+          return true
+        }
+      }
+      catch (error) {
+        logger.warn(`无效的忽略模式: ${pattern}`, error)
+      }
+    }
+
+    return false
+  }
+
+  /**
+   * 递归读取目录中的所有文件
+   */
+  static async readDirectoryFiles(dirPath: string, ignorePatterns?: string[]): Promise<string[]> {
+    const files: string[] = []
+    const absoluteDirPath = resolve(dirPath)
+
+    try {
+      const items = await readdir(absoluteDirPath)
+
+      for (const item of items) {
+        const itemPath = join(absoluteDirPath, item)
+        const relativePath = this.getRelativePath(itemPath)
+        const stats = await stat(itemPath)
+
+        if (stats.isDirectory()) {
+          // 递归处理子目录
+          const subFiles = await this.readDirectoryFiles(itemPath, ignorePatterns)
+          files.push(...subFiles)
+        }
+        else if (stats.isFile()) {
+          // 检查文件是否被忽略
+          if (!this.isFileIgnored(relativePath, ignorePatterns)) {
+            files.push(itemPath)
+          }
+          else {
+            logger.debug(`忽略文件: ${relativePath}`)
+          }
+        }
+      }
+    }
+    catch (error) {
+      logger.error(`读取目录失败: ${dirPath}`, error)
+      throw error
+    }
+
+    return files
+  }
+
+  /**
+   * 检查路径是文件还是目录
+   */
+  static async getPathType(path: string): Promise<'file' | 'directory' | 'nonexistent'> {
+    try {
+      const stats = await stat(resolve(path))
+      return stats.isDirectory() ? 'directory' : 'file'
+    }
+    catch {
+      return 'nonexistent'
+    }
+  }
+
+  /**
+   * 删除文件
+   */
+  static async removeFile(filePath: string): Promise<void> {
+    await unlink(resolve(filePath))
   }
 }
