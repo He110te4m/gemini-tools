@@ -11,110 +11,188 @@ import { logger } from '../../utils/logger.js'
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = dirname(__filename)
 
-export async function reviewPr(options: PrReviewOptions) {
+// 类型定义
+interface ReviewEnvironment {
+  reviewFiles: string
+  reviewFilesDiff: string
+  userDescription: string
+  additionalInstructions: string
+  outputFile: string
+}
+
+/**
+ * 验证 Git 仓库和分支
+ */
+async function validateGitEnvironment(options: PrReviewOptions): Promise<void> {
+  const isGitRepo = await Git.isGitRepository()
+  if (!isGitRepo) {
+    throw new Error('当前目录不是 Git 仓库')
+  }
+
+  const [sourceBranchExists, targetBranchExists] = await Promise.all([
+    Git.branchExists(options.sourceBranch),
+    Git.branchExists(options.targetBranch),
+  ])
+
+  if (!sourceBranchExists) {
+    throw new Error(`源分支不存在: ${options.sourceBranch}`)
+  }
+  if (!targetBranchExists) {
+    throw new Error(`目标分支不存在: ${options.targetBranch}`)
+  }
+}
+
+/**
+ * 获取并设置变更文件信息
+ */
+async function setupChangedFiles(options: PrReviewOptions): Promise<string> {
+  const changedFiles = await Git.getChangedFiles(options.sourceBranch, options.targetBranch)
+  logger.info(`发现 ${changedFiles.length} 个变更文件`)
+
+  const reviewFiles = changedFiles.join(',')
+  process.env.REVIEW_FILES = reviewFiles
+  logger.info(`设置 REVIEW_FILES: ${reviewFiles}`)
+
+  return reviewFiles
+}
+
+/**
+ * 获取并设置文件差异信息
+ */
+async function setupFileDiffs(options: PrReviewOptions): Promise<string> {
+  const fileDiffs = await Git.getAllFileDiffs(options.sourceBranch, options.targetBranch)
+  const reviewFilesDiff = JSON.stringify(fileDiffs)
+  process.env.REVIEW_FILES_DIFF = reviewFilesDiff
+  logger.info(`设置 REVIEW_FILES_DIFF: ${reviewFilesDiff.length} 字符`)
+
+  return reviewFilesDiff
+}
+
+/**
+ * 生成用户描述信息
+ */
+async function generateUserDescription(options: PrReviewOptions): Promise<string> {
+  const commits = await Git.getCommitsBetweenBranches(options.sourceBranch, options.targetBranch)
+
+  if (commits.length === 0) {
+    return '未找到 commit 信息'
+  }
+
+  const latestCommit = commits[0]
+  let userDescription = `${latestCommit.message}\n\n作者: ${latestCommit.author}\n日期: ${latestCommit.date}`
+
+  if (commits.length > 1) {
+    userDescription += `\n\n本次 PR 包含 ${commits.length} 个 commit`
+  }
+
+  return userDescription
+}
+
+/**
+ * 读取并处理额外的提示文件
+ */
+async function processAdditionalPrompts(additionalPrompts?: string[]): Promise<string> {
+  if (!additionalPrompts || additionalPrompts.length === 0) {
+    return ''
+  }
+
+  const promptContents: string[] = []
+
+  for (const promptFile of additionalPrompts) {
+    try {
+      const exists = await File.fileExists(promptFile)
+      if (exists) {
+        const content = await File.readFile(promptFile)
+        promptContents.push(content)
+        logger.info(`读取提示文件: ${promptFile}`)
+      }
+      else {
+        logger.warn(`提示文件不存在: ${promptFile}`)
+      }
+    }
+    catch (error) {
+      logger.error(`读取提示文件失败: ${promptFile}`, error)
+    }
+  }
+
+  return promptContents.join('\n\n')
+}
+
+/**
+ * 设置环境变量
+ */
+function setupEnvironmentVariables(env: ReviewEnvironment): void {
+  process.env.REVIEW_FILES = env.reviewFiles
+  process.env.REVIEW_FILES_DIFF = env.reviewFilesDiff
+  process.env.USER_DESCRIPTION = env.userDescription
+  process.env.ADDITIONAL_INSTRUCTIONS = env.additionalInstructions
+  process.env.OUTPUT_FILE = env.outputFile
+}
+
+/**
+ * 记录环境变量摘要（调试用）
+ */
+function logEnvironmentSummary(env: ReviewEnvironment): void {
+  logger.debug('环境变量摘要:')
+  logger.debug(`REVIEW_FILES: ${env.reviewFiles}`)
+  logger.debug(`REVIEW_FILES_DIFF: ${env.reviewFilesDiff.substring(0, 100)}...`)
+  logger.debug(`USER_DESCRIPTION: ${env.userDescription}`)
+  logger.debug(`ADDITIONAL_INSTRUCTIONS: ${env.additionalInstructions}`)
+}
+
+/**
+ * 执行 Gemini Review
+ */
+async function executeGeminiReview(): Promise<string> {
+  const promptFile = resolve(__dirname, 'prompt.txt')
+  const reviewResult = await run(promptFile)
+  logger.info(`Gemini 返回的 review 结果: ${reviewResult}`)
+
+  return reviewResult
+}
+
+/**
+ * 主函数：执行 PR Review
+ */
+export async function reviewPr(options: PrReviewOptions): Promise<void> {
   try {
     logger.info('开始 PR Review 流程')
 
-    // 检查是否在 Git 仓库中
-    const isGitRepo = await Git.isGitRepository()
-    if (!isGitRepo) {
-      throw new Error('当前目录不是 Git 仓库')
-    }
+    // 验证 Git 环境
+    await validateGitEnvironment(options)
 
-    // 检查分支是否存在
-    const [sourceBranchExists, targetBranchExists] = await Promise.all([
-      Git.branchExists(options.sourceBranch),
-      Git.branchExists(options.targetBranch),
+    // 并行获取所有必要信息
+    const [reviewFiles, reviewFilesDiff, userDescription] = await Promise.all([
+      setupChangedFiles(options),
+      setupFileDiffs(options),
+      generateUserDescription(options),
     ])
 
-    if (!sourceBranchExists) {
-      throw new Error(`源分支不存在: ${options.sourceBranch}`)
-    }
-    if (!targetBranchExists) {
-      throw new Error(`目标分支不存在: ${options.targetBranch}`)
-    }
-
-    // 获取变更文件列表
-    const changedFiles = await Git.getChangedFiles(options.sourceBranch, options.targetBranch)
-    logger.info(`发现 ${changedFiles.length} 个变更文件`)
-
-    // 生成 REVIEW_FILES 变量
-    const reviewFiles = changedFiles.join(',')
-    process.env.REVIEW_FILES = reviewFiles
-    logger.info(`设置 REVIEW_FILES: ${reviewFiles}`)
-
-    // 获取所有文件的 diff 信息
-    const fileDiffs = await Git.getAllFileDiffs(options.sourceBranch, options.targetBranch)
-
-    // 生成 REVIEW_FILES_DIFF 变量
-    const reviewFilesDiff = JSON.stringify(fileDiffs)
-    process.env.REVIEW_FILES_DIFF = reviewFilesDiff
-    logger.info(`设置 REVIEW_FILES_DIFF: ${reviewFilesDiff.length} 字符`)
-
-    // 获取 commit 信息并生成 USER_DESCRIPTION
-    const commits = await Git.getCommitsBetweenBranches(options.sourceBranch, options.targetBranch)
-    let userDescription = ''
-
-    if (commits.length > 0) {
-      // 使用最新的 commit 信息作为描述
-      const latestCommit = commits[0]
-      userDescription = `${latestCommit.message}\n\n作者: ${latestCommit.author}\n日期: ${latestCommit.date}`
-
-      // 如果有多个 commit，添加摘要
-      if (commits.length > 1) {
-        userDescription += `\n\n本次 PR 包含 ${commits.length} 个 commit`
-      }
-    }
-    else {
-      userDescription = '未找到 commit 信息'
-    }
-
-    process.env.USER_DESCRIPTION = userDescription
-    logger.info(`设置 USER_DESCRIPTION: ${userDescription}`)
-
-    // 处理 additionalPrompts 并生成 ADDITIONAL_INSTRUCTIONS
-    let additionalInstructions = ''
-
-    if (options.additionalPrompts && options.additionalPrompts.length > 0) {
-      const promptContents: string[] = []
-
-      for (const promptFile of options.additionalPrompts) {
-        try {
-          if (File.fileExists(promptFile)) {
-            const content = File.readFile(promptFile)
-            promptContents.push(content)
-            logger.info(`读取提示文件: ${promptFile}`)
-          }
-          else {
-            logger.warn(`提示文件不存在: ${promptFile}`)
-          }
-        }
-        catch (error) {
-          logger.error(`读取提示文件失败: ${promptFile}`, error)
-        }
-      }
-
-      additionalInstructions = promptContents.join('\n\n')
-    }
-
-    process.env.ADDITIONAL_INSTRUCTIONS = additionalInstructions
+    // 处理额外提示（异步操作）
+    const additionalInstructions = await processAdditionalPrompts(options.additionalPrompts)
     logger.info(`设置 ADDITIONAL_INSTRUCTIONS: ${additionalInstructions.length} 字符`)
 
+    // 设置输出文件路径
+    const outputFile = resolve(process.cwd(), options.output || 'review.md')
+
+    // 构建环境变量对象
+    const env: ReviewEnvironment = {
+      reviewFiles,
+      reviewFilesDiff,
+      userDescription,
+      additionalInstructions,
+      outputFile,
+    }
+
+    // 设置环境变量
+    setupEnvironmentVariables(env)
     logger.success('PR Review 环境变量设置完成')
 
-    process.env.OUTPUT_FILE = resolve(process.cwd(), options.output || 'review.md')
+    // 记录环境变量摘要
+    logEnvironmentSummary(env)
 
-    // 输出环境变量信息（用于调试）
-    logger.debug('环境变量摘要:')
-    logger.debug(`REVIEW_FILES: ${process.env.REVIEW_FILES}`)
-    logger.debug(`REVIEW_FILES_DIFF: ${process.env.REVIEW_FILES_DIFF?.substring(0, 100)}...`)
-    logger.debug(`USER_DESCRIPTION: ${process.env.USER_DESCRIPTION}`)
-    logger.debug(`ADDITIONAL_INSTRUCTIONS: ${process.env.ADDITIONAL_INSTRUCTIONS}`)
-
-    // 从 Gemini 获取 review 结果
-    const promptFile = resolve(__dirname, 'prompt.txt')
-    const reviewResult = await run(promptFile)
-    logger.info(`Gemini 返回的 review 结果: ${reviewResult}`)
+    // 执行 Gemini Review
+    await executeGeminiReview()
 
     // 一般不需要输出， Gemini 的 Prompt 已经要求输出了，再输出会覆盖掉原有的 review 内容
     // // 输出 review 结果

@@ -16,11 +16,12 @@ export const EnvSchema = z.object({
 
 // PR Review 命令选项验证模式
 export const PrReviewOptionsSchema = z.object({
-  additionalPrompts: z.array(z.string()).optional(),
   sourceBranch: z.string().min(1, '源分支名称不能为空'),
   targetBranch: z.string().min(1, '目标分支名称不能为空'),
   output: z.string().optional(),
   model: z.string().optional(),
+  additionalPrompts: z.array(z.string()).optional(),
+  ignores: z.array(z.string()).optional(),
 })
 
 // Module Review 命令选项验证模式

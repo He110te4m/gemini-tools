@@ -17,11 +17,12 @@ program
 // 根据 diff review 代码
 program.command('pr-review')
   .description('Review PR')
-  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
   .requiredOption('-s, --source-branch <sourceBranch>', '源分支名称')
   .requiredOption('-t, --target-branch <targetBranch>', '目标分支名称')
   .option('-o, --output <output>', '输出文件路径')
   .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
+  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
+  .option('--ignore <ignores...>', '忽略文件路径（支持多个文件）')
   .action(async (options: unknown) => {
     // 验证输入参数
     const validation = Validators.validatePrReviewOptions(options)
@@ -45,11 +46,11 @@ program.command('pr-review')
 // 根据模块 review 代码
 program.command('module-review')
   .description('Review 代码')
-  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
-  .option('--ignore <ignores...>', '忽略文件路径（支持多个文件）')
   .requiredOption('-i, --input <inputs...>', '输入文件路径（支持多个文件）')
   .option('-o, --output <output>', '输出文件路径')
   .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
+  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
+  .option('--ignore <ignores...>', '忽略文件路径（支持多个文件）')
   .action(async (options: unknown) => {
     // 验证输入参数
     const validation = Validators.validateModuleReviewOptions(options)

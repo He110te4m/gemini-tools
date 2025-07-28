@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { ChatMessageSchema, GeminiConfigSchema, Validators } from '../utils/validators.js'
+import { GeminiConfigSchema, Validators } from '../utils/validators.js'
 
 describe('zod Validators', () => {
   describe('aPI Key Validation', () => {
@@ -11,7 +11,10 @@ describe('zod Validators', () => {
     it('should reject empty API key', () => {
       const result = Validators.validateApiKey('')
       expect(result.success).toBe(false)
-      expect(result.error).toBe('Too small: expected string to have >=1 characters')
+      // 主要是规避 ts 类型报错，必须收窄为 false 才能访问到 error
+      if (result.success === false) {
+        expect(result.error).toBe('Too small: expected string to have >=1 characters')
+      }
     })
   })
 
@@ -71,58 +74,33 @@ describe('zod Validators', () => {
       const config = {
         apiKey: 'test-api-key',
         model: 'gemini-pro',
-        temperature: 0.7,
-        maxTokens: 2048,
       }
 
       const result = Validators.validateGeminiConfig(config)
       expect(result.success).toBe(true)
-      expect(result.data).toEqual(config)
+      // 主要是规避 ts 类型报错，必须收窄为 true 才能访问到 data
+      if (result.success === true) {
+        expect(result.data).toEqual(config)
+      }
     })
 
     it('should reject config with missing API key', () => {
       const config = {
         apiKey: '',
         model: 'gemini-pro',
-        temperature: 0.7,
-        maxTokens: 2048,
       }
 
       const result = Validators.validateGeminiConfig(config)
       expect(result.success).toBe(false)
     })
-  })
 
-  describe('chat Message Validation', () => {
-    it('should validate user message', () => {
-      const message = {
-        role: 'user' as const,
-        content: 'Hello, AI!',
+    it('should reject config with missing model', () => {
+      const config = {
+        apiKey: 'test-api-key',
+        model: '',
       }
 
-      const result = Validators.validateChatMessage(message)
-      expect(result.success).toBe(true)
-      expect(result.data).toEqual(message)
-    })
-
-    it('should validate assistant message', () => {
-      const message = {
-        role: 'assistant' as const,
-        content: 'Hello, human!',
-      }
-
-      const result = Validators.validateChatMessage(message)
-      expect(result.success).toBe(true)
-      expect(result.data).toEqual(message)
-    })
-
-    it('should reject message with invalid role', () => {
-      const message = {
-        role: 'invalid' as any,
-        content: 'Hello!',
-      }
-
-      const result = Validators.validateChatMessage(message)
+      const result = Validators.validateGeminiConfig(config)
       expect(result.success).toBe(false)
     })
   })
@@ -132,22 +110,20 @@ describe('zod Validators', () => {
       const config = {
         apiKey: 'test-key',
         model: 'gemini-pro',
-        temperature: 0.5,
-        maxTokens: 1024,
       }
 
       const result = GeminiConfigSchema.safeParse(config)
       expect(result.success).toBe(true)
     })
 
-    it('should parse valid chat message', () => {
-      const message = {
-        role: 'user' as const,
-        content: 'Test message',
+    it('should reject invalid Gemini config', () => {
+      const config = {
+        apiKey: '',
+        model: 'gemini-pro',
       }
 
-      const result = ChatMessageSchema.safeParse(message)
-      expect(result.success).toBe(true)
+      const result = GeminiConfigSchema.safeParse(config)
+      expect(result.success).toBe(false)
     })
   })
 })
