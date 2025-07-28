@@ -28,7 +28,7 @@ export const PrReviewOptionsSchema = z.object({
 export const ModuleReviewOptionsSchema = z.object({
   additionalPrompts: z.array(z.string()).optional(),
   ignores: z.array(z.string()).optional(),
-  inputs: z.array(z.string()).min(1, '至少需要指定一个输入文件'),
+  input: z.string().min(1, '输入文件路径不能为空'),
   output: z.string().optional(),
   model: z.string().optional(),
 })

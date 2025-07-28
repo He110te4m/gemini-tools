@@ -161,7 +161,7 @@ function logEnvironmentSummary(env: ReviewEnvironment): void {
  * 执行 Gemini Review
  */
 async function executeGeminiReview(): Promise<string> {
-  const promptFile = resolve(__dirname, 'prompt.txt')
+  const promptFile = resolve(__dirname, 'pr-review-prompt.txt')
   logger.debug(`Gemini 执行的 prompt 文件: ${promptFile}`)
 
   const reviewResult = await run(promptFile)
