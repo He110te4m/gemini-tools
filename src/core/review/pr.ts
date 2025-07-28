@@ -4,9 +4,9 @@ import process from 'node:process'
 import { fileURLToPath } from 'node:url'
 import { minimatch } from 'minimatch'
 import { run } from '../../services/gemini'
-import { File } from '../../utils/fs.js'
-import { Git } from '../../utils/git.js'
-import { logger } from '../../utils/logger.js'
+import { Git } from '../../utils/git'
+import { logger } from '../../utils/logger'
+import { processAdditionalPrompts } from '../../utils/prompt'
 
 // 获取当前文件的目录路径（ES 模块中的 __dirname 替代方案）
 const __filename = fileURLToPath(import.meta.url)
@@ -155,36 +155,6 @@ async function generateUserDescription(options: PrReviewOptions): Promise<string
   }
 
   return userDescription
-}
-
-/**
- * 读取并处理额外的提示文件
- */
-async function processAdditionalPrompts(additionalPrompts?: string[]): Promise<string> {
-  if (!additionalPrompts || additionalPrompts.length === 0) {
-    return ''
-  }
-
-  const promptContents: string[] = []
-
-  for (const promptFile of additionalPrompts) {
-    try {
-      const exists = await File.fileExists(promptFile)
-      if (exists) {
-        const content = await File.readFile(promptFile)
-        promptContents.push(content)
-        logger.info(`读取提示文件: ${promptFile}`)
-      }
-      else {
-        logger.warn(`提示文件不存在: ${promptFile}`)
-      }
-    }
-    catch (error) {
-      logger.error(`读取提示文件失败: ${promptFile}`, error)
-    }
-  }
-
-  return promptContents.join('\n\n')
 }
 
 /**

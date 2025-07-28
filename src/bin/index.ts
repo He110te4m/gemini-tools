@@ -5,6 +5,7 @@ import { Command } from 'commander'
 import pkg from '../../package.json' with { type: 'json' }
 import { reviewModule } from '../core/review/module'
 import { reviewPr } from '../core/review/pr'
+import { unitTest } from '../core/test/unit'
 import { Validators } from '../utils/validators'
 
 const program = new Command()
@@ -73,10 +74,17 @@ program.command('module-review')
 
 program.command('unit-test')
   .description('生成单元测试')
-  .argument('<file>', '文件路径')
-  .option('-o, --output <output>', '输出文件路径')
-  .action(async () => {
-    globalThis.console.log('生成单元测试')
+  .requiredOption('-i, --input <input>', '输入文件路径，支持目录与文件')
+  .requiredOption('-o, --output <output>', '输出文件路径')
+  .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
+  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义 review 规则')
+  .action(async (options: unknown) => {
+    const validation = Validators.validateUnitTestOptions(options)
+    if (!validation.success) {
+      globalThis.console.error(`参数验证失败: ${validation.error}`)
+      process.exit(1)
+    }
+    unitTest(validation.data)
   })
 
 program.command('e2e-test')

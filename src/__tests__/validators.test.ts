@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { GeminiConfigSchema, Validators } from '../utils/validators.js'
+import { GeminiConfigSchema, Validators } from '../utils/validators'
 
 describe('zod Validators', () => {
   describe('aPI Key Validation', () => {

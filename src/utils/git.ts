@@ -1,5 +1,5 @@
-import { logger } from './logger.js'
-import { ShellExecutor } from './shell.js'
+import { logger } from './logger'
+import { ShellExecutor } from './shell'
 
 export interface GitDiffInfo {
   absolutePath: string

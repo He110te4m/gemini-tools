@@ -1,7 +1,7 @@
 import { access, readFile, writeFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import process from 'node:process'
-import { logger } from './logger.js'
+import { logger } from './logger'
 
 export interface FileInfo {
   absolutePath: string

@@ -1,7 +1,7 @@
-import type { EnvConfig, GeminiConfig } from '../utils/validators.js'
+import type { EnvConfig, GeminiConfig } from '../utils/validators'
 import process from 'node:process'
 import { config } from 'dotenv'
-import { Validators } from '../utils/validators.js'
+import { Validators } from '../utils/validators'
 
 // 加载环境变量
 config()

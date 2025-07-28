@@ -1,6 +1,6 @@
 import type { Options, ProcessPromise, Shell } from 'zx'
 import { $ } from 'zx'
-import { logger } from './logger.js'
+import { logger } from './logger'
 
 export type ShellOptions = Partial<Options>
 
