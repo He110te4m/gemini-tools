@@ -1,8 +1,10 @@
 // 导出命令行工具
 export * from './bin/index'
 
-// 导出核心功能
+export * from './core/doc/doc'
+export * from './core/review/module'
 export * from './core/review/pr'
+export * from './core/test/unit'
 
 // 导出所有公共 API
 export * from './services/config'

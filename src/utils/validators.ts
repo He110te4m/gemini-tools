@@ -42,12 +42,22 @@ export const UnitTestOptionsSchema = z.object({
   ignores: z.array(z.string()).optional(),
 })
 
+// Doc 命令选项验证模式
+export const DocOptionsSchema = z.object({
+  input: z.string().min(1, '输入文件路径不能为空'),
+  output: z.string().optional(),
+  model: z.string().optional(),
+  additionalPrompts: z.array(z.string()).optional(),
+  ignores: z.array(z.string()).optional(),
+})
+
 // 导出类型
 export type GeminiConfig = z.infer<typeof GeminiConfigSchema>
 export type EnvConfig = z.infer<typeof EnvSchema>
 export type PrReviewOptions = z.infer<typeof PrReviewOptionsSchema>
 export type ModuleReviewOptions = z.infer<typeof ModuleReviewOptionsSchema>
 export type UnitTestOptions = z.infer<typeof UnitTestOptionsSchema>
+export type DocOptions = z.infer<typeof DocOptionsSchema>
 
 type ValidatorResult<T> = {
   success: true
@@ -154,6 +164,16 @@ export class Validators {
    */
   static validateUnitTestOptions(options: unknown): ValidatorResult<UnitTestOptions> {
     const result = UnitTestOptionsSchema.safeParse(options)
+    return result.success
+      ? { success: true, data: result.data }
+      : { success: false, error: result.error.issues[0]?.message }
+  }
+
+  /**
+   * 验证 Doc 选项
+   */
+  static validateDocOptions(options: unknown): ValidatorResult<DocOptions> {
+    const result = DocOptionsSchema.safeParse(options)
     return result.success
       ? { success: true, data: result.data }
       : { success: false, error: result.error.issues[0]?.message }

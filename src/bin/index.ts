@@ -3,6 +3,7 @@
 import process from 'node:process'
 import { Command } from 'commander'
 import pkg from '../../package.json' with { type: 'json' }
+import { generateDoc } from '../core/doc/doc'
 import { reviewModule } from '../core/review/module'
 import { reviewPr } from '../core/review/pr'
 import { unitTest } from '../core/test/unit'
@@ -108,10 +109,29 @@ program.command('e2e-test')
 
 program.command('doc')
   .description('生成项目文档')
-  .argument('<file>', '文件路径')
+  .requiredOption('-i, --input <input>', '输入文件路径')
   .option('-o, --output <output>', '输出文件路径')
-  .action(async () => {
-    globalThis.console.log('生成项目文档')
+  .option('-m, --model <model>', '模型名称，默认使用环境变量 GEMINI_MODEL')
+  .option('--additional-prompts <additionalPrompts...>', '自定义提示词，用于补充项目信息以及自定义文档生成规则')
+  .option('--ignore <ignores...>', '忽略文件路径（支持多个文件）')
+  .action(async (options: unknown) => {
+    // 验证输入参数
+    const validation = Validators.validateDocOptions(options)
+    if (!validation.success) {
+      globalThis.console.error(`参数验证失败: ${validation.error}`)
+      process.exit(1)
+    }
+
+    const { data } = validation
+
+    try {
+      // 调用文档生成函数
+      await generateDoc(data)
+    }
+    catch (error) {
+      globalThis.console.error(`文档生成执行失败: ${error instanceof Error ? error.message : String(error)}`)
+      process.exit(1)
+    }
   })
 
 program.command('refactor')
